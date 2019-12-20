@@ -9,7 +9,7 @@ NoDelayStepper::NoDelayStepper(unsigned char pins[], char stepType, long stepsPe
     RPM = maxRPM; // this may get depricated
     target = 0; // last instructed position(in _steps)
     resetZeroAngle(); // init _steps = 0
-    if (stepType == 0 || stepType == 1 || stepType == 2) // is type known? 
+    if (stepType == 0 || stepType == 1 || stepType == 2) // is type known?
         sType = stepType; // see step_it() def
     else sType = -1; // should do nothing instead of throwing error
     pin = pins; // save array* to object
@@ -39,10 +39,10 @@ short NoDelayStepper::step_it(bool isCw){
     else{
         _it+=1;
         _steps+=1;
-    } 
+    }
 }
 
-void NoDelayStepper::tick(){
+void NoDelayStepper::sync(){
     if (target != _steps){
         unsigned long delta = millis();
         if (delta >= _dt){
@@ -72,7 +72,7 @@ T NoDelayStepper::wrap_it(T max, T min = 0, T it = NULL){
     return it;
 }
 
-bool NoDelayStepper::isChanging(){
+bool NoDelayStepper::isCellerating(){
     return target != NULL ? target != _steps : false;
 }
 
@@ -125,7 +125,7 @@ void NoDelayStepper::write(){
 
 void NoDelayStepper::set_delay(){
     _dt = millis() + (unsigned long)(RPM * SPR / 60000.0);
-    /* Serial.print("delay = ");        
+    /* Serial.print("delay = ");
     Serial.print((RPM * SPR / 60000.0));
     Serial.println(" milliseconds."); */
 }
@@ -156,7 +156,7 @@ void NoDelayStepper::go(double dest){ // % value
         dest = max(-100.0, min(100.0, dest));
         target = wrap_it<long>(SPR, 0, SPR / 200.0 * dest);
         // Serial.print("motor target: ");Serial.println(target);
-        tick();
+        sync();
     }
 }
 
@@ -170,7 +170,7 @@ void NoDelayStepper::goSteps(int dest){
     else{
         target = dest + _steps;
         // Serial.print("motor target: ");Serial.println(target);
-        tick();
+        sync();
     }
 }
 
@@ -182,6 +182,6 @@ void NoDelayStepper::goAngle(double dest){
     }
     else{
         target = round(wrap_it<double>(360.0, 0.0, dest) / 360.0 * SPR);
-        tick();
+        sync();
     }
 }

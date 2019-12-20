@@ -10,15 +10,15 @@ public:
     void go(double); // set target using percentage [-100,100]
     void goSteps(int); // set target steps per revolution
     void goAngle(double); // set target steps via angle
-    bool isChanging();
-    void tick(); // non-intrupt timmer method
+    bool isCellerating();
+    void sync(); // non-intrupt timmer method
 private:
     void resetZeroAngle();
     void releasePins();
     short step_it(bool); // step the iterator +-1
     void write(); // write pin outputs according to steps counter
     // wrap variable it w/in specified max and min
-    template<typename T>T wrap_it(T max, T min, T it); 
+    template<typename T>T wrap_it(T max, T min, T it);
     double wrap_angle(short theta); // wrap angle to range [0,360]
     void set_delay(); // set ending time to hold between steps
     bool isCW(); // is ClockWise shorter than counter-ClockWise?

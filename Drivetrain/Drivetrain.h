@@ -1,51 +1,66 @@
 #ifndef Drivetrain_h
 #define Drivetrain_h
-#include "Motor.h"
-#include "NoDelayStepper.h"
+#include "Motors.h"
 #include <arduino.h>
 
-class Drivetrain{
+class SmoothDrivetrain{
 public:
-    Drivetrain(unsigned char m1[], unsigned char m2[], unsigned char m3[], bool isPhased){
-        //create object for each motor (pinMode performed on instantiation)
-        if (isPhased){
-            M1 = new PhasedMotor(m1);
-            M2 = new PhasedMotor(m2);
-        }
-        else {
-            M1 = new BiMotor(m1);
-            M2 = new BiMotor(m2);
-        }
-        M3 = new NoDelayStepper(m3);
-    }
-    virtual void go(short, short, double){};// dummy prototype
-    void tick();
+    SmoothDrivetrain(MotorPool* motors, uint8_t maxSpeed = 100, bool smooth = true);
+    void go(short cmds[], bool smooth = true);
+    void sync();
+    void stop();
+    bool isCellerating();
+
 protected:
-    /* short clampPWM(short input){ // return a proper range of [-255, 255]
-        return (input < -255 ? -255 : (input > 255 ? 255 : input));
-    } */
-    Solonoid* M1;
-    Solonoid* M2;
-    NoDelayStepper* M3;
+    short clampPWM(short input);
+    MotorPool* motorPool;
+    bool smooth;
+    uint8_t maxSpeed;
+    // short* prev_cmds;
 };
 
-class BiPed: public Drivetrain{
+class Tank: public SmoothDrivetrain{
     // class for controlling the DC drive motors in tandem
 public:
-    BiPed(unsigned char m1[], unsigned char m2[], unsigned char m3[], bool);// c'tor
-    void go(short, short, double);// set motors' speeds allowable range is [-255,255]
+    Tank(MotorPool* motors, uint8_t maxSpeed = 100, bool smooth = true);// c'tor
+    void go(short x, short y, bool smooth = true);
 private:
-    // motor objects and current speeds for left and right motors
+    // current speeds for left and right motors
     short right, left;
 };
 
-class QuadPed: public Drivetrain{
+class Automotive: public SmoothDrivetrain{
     // class for controlling the DC drive motors in tandem
 public:
-    QuadPed(unsigned char m1[], unsigned char m2[], unsigned char m3[], bool);// c'tor
-    void go(short, short, double);// set motors' speeds allowable range is [-255,255]
+    Automotive(MotorPool* motors, uint8_t maxSpeed = 100, bool smooth = true);// c'tor
+    void go(short x, short y, bool smooth = true);
 private:
-    // motor objects and current speeds for left and right motors
-    short FB, LR;
+    // current speeds for left and right motors
+    short forwardBackward, leftRight;
+};
+
+
+class Mecanum: public SmoothDrivetrain{
+    // class for controlling the DC drive motors in tandem
+public:
+    Mecanum(MotorPool* motors, uint8_t maxSpeed = 100, bool smooth = true);// c'tor
+    void go(short x, short y, bool strafe, bool smooth = true);
+private:
+    // current speeds for left and right motors
+    short right, left;
+};
+
+class Locomotive{
+public:
+    Locomotive(Solenoid* solenoids, uint8_t switchPin);
+    void stop();
+    void go(bool reverse = false);
+    void sync();
+    bool isCellerating();
+private:
+    bool isForward;
+    bool isInMotion;
+    Solenoid* solenoids;
+    uint8_t switchPin;
 };
 #endif
