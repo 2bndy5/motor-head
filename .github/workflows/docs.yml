@@ -1,0 +1,51 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOXYGEN_VERSION: '1.12.0'
+    steps:
+      - name: install Doxygen static libclang deps
+        run: sudo apt-get install libclang1-12 libclang-cpp12
+
+      - name: install doxygen from SF binary archives
+        run: |
+          mkdir .doxygen && cd .doxygen
+          curl -L https://sourceforge.net/projects/doxygen/files/rel-$DOXYGEN_VERSION/doxygen-$DOXYGEN_VERSION.linux.bin.tar.gz > doxygen.tar.gz
+          gunzip doxygen.tar.gz
+          tar xf doxygen.tar
+          cd doxygen-$DOXYGEN_VERSION
+          sudo make install
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+
+      - name: inject version number to doxyfile
+        run: python3 .github/doxygen.py
+
+      - run: doxygen
+        working-directory: docs
+
+      - name: Save doxygen docs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: ${{ github.workspace }}/docs/html
+
+      - name: upload to github pages
+        if: github.event_name == 'push'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/html
+  

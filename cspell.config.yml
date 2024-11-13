@@ -1,0 +1,14 @@
+version: "0.2"
+words:
+  - CHIPINFO
+  - Doxyfile
+  - doxygen
+  - endparblock
+  - gpio
+  - gpiochip
+  - mecanum
+  - parblock
+  - Pico
+ignorePaths:
+  - build
+  - docs/doxyfile
