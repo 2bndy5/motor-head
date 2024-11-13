@@ -52,6 +52,7 @@ jobs:
             - name: arduino:megaavr
             - name: arduino:sam
             - name: arduino:samd
+            - name: arduino:mbed
             - name: rp2040:rp2040
               source-url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
             - name: adafruit:nrf52
