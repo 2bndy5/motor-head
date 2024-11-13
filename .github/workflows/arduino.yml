@@ -1,0 +1,86 @@
+name: Arduino builds
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REPORT_PATH: sketches-reports
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        fqbn:
+          - "arduino:mbed:nano33ble"
+          - "arduino:mbed:nanorp2040connect"
+          - "rp2040:rp2040:rpipico"
+          - "rp2040:rp2040:rpipicow"
+          - "rp2040:rp2040:adafruit_feather"
+        # By default, don't generate size deltas data.
+        enable-deltas-report:
+          - false
+        include:
+          - fqbn: arduino:avr:nano
+            enable-deltas-report: true
+          - fqbn: arduino:samd:mkrzero
+            enable-deltas-report: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: sketch reports
+        if: matrix.enable-deltas-report
+        id: delta-report-name
+        run: >-
+          echo "report-name=${{ matrix.fqbn }}" | tr : - >> "$GITHUB_OUTPUT"
+
+      - name: Compile examples
+        uses: arduino/compile-sketches@main
+        with:
+          sketch-paths: examples
+          fqbn: ${{ matrix.fqbn }}
+          libraries: |
+            - source-path: ./
+          platforms: |
+            - name: arduino:avr
+            - name: arduino:megaavr
+            - name: arduino:sam
+            - name: arduino:samd
+            - name: rp2040:rp2040
+              source-url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+            - name: adafruit:nrf52
+              source-url: https://adafruit.github.io/arduino-board-index/package_adafruit_index.json
+            - name: Seeeduino:nrf52
+              source-url: https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json
+          enable-deltas-report: ${{ matrix.enable-deltas-report }}
+          sketches-report-path: ${{ env.REPORT_PATH }}
+
+      # This step is needed to pass the size data to the report job 
+      - name: Upload sketches report to workflow artifact
+        if: ${{ matrix.enable-deltas-report }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: arduino-deltas-${{ steps.delta-report-name.outputs.report-name }}
+          path: ${{ env.REPORT_PATH }}
+  report:
+    needs: [build]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sketches reports artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: arduino-deltas-*
+          path: ${{ env.REPORT_PATH }}
+
+      - uses: 2bndy5/report-size-deltas@update-comment
+        with:
+          sketches-reports-source: ${{ env.REPORT_PATH }}
+          update-comment: true
+
